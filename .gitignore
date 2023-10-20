@@ -1,0 +1,4 @@
+# Specifies files/folder that should not be committed to Github Repo
+
+# Data is too large to commit; keep these files locally!
+data/
