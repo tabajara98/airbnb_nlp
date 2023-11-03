@@ -6,3 +6,4 @@ data/processed/
 
 # IPYNB checkpoints
 notebooks/.ipynb_checkpoints/
+notebooks/cache/
