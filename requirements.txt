@@ -1,0 +1,5 @@
+pandas
+sentence_transformers
+torch
+sklearn
+nltk

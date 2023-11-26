@@ -10,18 +10,15 @@ To implement a natural language search feature for Airbnb properties. We aim to 
 .
 ├── data/
 │   ├── raw/         # Raw data files (original airbnb .csv files)
-│   └── processed/   # Processed data files (.pkl and/or .parquet)
+│   ├── processed/   # Processed data files (.pkl)
+│   └── cached_models/ # Embedded vectors of processed data files and other relevant property data (.pkl) 
 ├── notebooks/       # Jupyter notebooks for tests
 ├── src/             # Modularized code files (.py)
 │   ├── data/        # Data processing scripts (e.g., data ingest and pre-processing, cleaning)
-│   ├── feature/     # Feature engineering scripts for tests
-│   ├── models/      # Machine learning models and related 
-│   ├── ui/          # UI development related scripts 
-│   └── utils/       # Utility scripts (useful generic functions)
-├── config/          # Configuration files for hyperparameters, settings, etc. (.yaml)
+│   ├── nlp/         # NLP-related tasks, including the SentenceTransformer model
+│   ├── app/         # Query function
+│   └── ui/          # UI development related scripts 
 ├── docs/            # Documentation (e.g., project description, API docs)
-├── results/         # Model checkpoints, logs, and evaluation results
-├── tests/           # Unit tests and integration tests
 ├── .gitignore       # Git ignore file (specify files/folders that don't need to be uploaded to git)
 ├── README.md        # Project README file
 └── requirements.txt # Python dependencies

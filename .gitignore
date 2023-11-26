@@ -3,6 +3,7 @@
 # Data is too large to commit; keep these files locally!
 data/raw/
 data/processed/
+data/cached_models/
 
 # IPYNB checkpoints
 notebooks/.ipynb_checkpoints/
