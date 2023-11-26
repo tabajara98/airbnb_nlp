@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-To implement a natural language search feature for Airbnb properties. We aim to enable users to search for properties using their own words, making it more intuitive and personalized. Specifically, we plan to leverage customer reviews from all properties to enable semantic search, allowing users to input queries like "quiet cottage close to the beach in LA" or "cozy cabin in the woods by a river in Seattle." Additionally, we intend to explore the use of booking data to find interesting trends in pricing and availability for properties returned in the search results. This proposal seeks to address the question of how enhancing Airbnb's search capabilities with natural language processing and predictive analytics can improve the user experience and increase booking efficiency.
+To implement a natural language search feature for Airbnb properties. We aim to enable users to search for properties using their own words, making it more intuitive and personalized. Specifically, we plan to leverage customer reviews from all properties to enable semantic search, allowing users to input queries like "quiet cottage close to the beach in LA" or "cozy cabin in the woods by a river in Seattle." This proposal seeks to address the question of how enhancing Airbnb's search capabilities with natural language processing and predictive analytics can improve the user experience and increase booking efficiency.
 
 ## Directory Structure
 
