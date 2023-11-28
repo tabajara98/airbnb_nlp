@@ -91,15 +91,10 @@ def semantic_search_airbnb(query):
 
     # Extract the actual sentences
     df_result = pd.DataFrame()
-    for col in ['name', 'subtext', 'description', 'link', 'photo', 'price', 'location']:
+    for col in ['name', 'subtext', 'description', 'link', 'photo', 'price', 'location','lat','long','starRating']:
         for indice in [similar_indices[i]['corpus_id'] for i in range(len(similar_indices))]:
             df_result.loc[indice, col] = cache_data[col][indice]
     df_result['score'] = [item['score'] for item in similar_indices]
-    df_result.rename(
-        columns={'listing_url': 'link', 'picture_url': 'photo', 'neighbourhood': 'location'},
-        inplace=True
-    )
-    df_result['starRating'] = 0
 
     return df_result
 
