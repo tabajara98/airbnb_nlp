@@ -80,7 +80,7 @@ def semantic_search_airbnb(query):
     clean_query = pd.Series(query).apply(clean_text)
     query_embedding = model.encode(query, show_progress_bar=True, convert_to_tensor=True)
 
-    top_k = 10
+    top_k = 15
     print(f'##### PERFORMING SEMANTIC SEARCH FOR QUERY: "{query}" #####')
     search_results = util.semantic_search(
         query_embedding, corpus_embeddings, top_k=top_k
