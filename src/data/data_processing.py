@@ -59,7 +59,7 @@ df_listings['subtext'] = df_listings['subtext'].str.replace('·', '•')
 df_listings['name'] = df_listings['name'].str.split(' · ').str[0]
 
 # Rename columns for clarity
-df_listings.rename(columns={'listing_url': 'link', 'picture_url': 'photo', 'neighbourhood': 'location'}, inplace=True)
+df_listings.rename(columns={'listing_url': 'link', 'picture_url': 'photo', 'neighbourhood': 'location','review_scores_rating':'starRating','latitude':'lat','longitude':'long'}, inplace=True)
 
 listings_id_column = 'id'
 listings_nlp_columns = [
@@ -75,7 +75,7 @@ listings_nlp_columns = [
 ]
 
 # Other columns to save in the DataFrame
-cols_aux_final = ['id', 'name', 'subtext', 'description', 'link', 'photo', 'price', 'location','review_scores_rating','latitude','longitude']
+cols_aux_final = ['id', 'name', 'subtext', 'description', 'link', 'photo', 'price', 'location','starRating','lat','long']
 
 # Combine specified columns into a new column 'corpus_text_host'
 df_listings.loc[:, 'corpus_text_host'] = ''

@@ -13,14 +13,14 @@ from nltk.stem import PorterStemmer, WordNetLemmatizer
 pd.set_option("max_colwidth", 500)
 
 # Other columns to save in the DataFrame
-cols_aux_final = ['id', 'name', 'subtext', 'description', 'link', 'photo', 'price', 'location','review_scores_rating','latitude','longitude']
+cols_aux_final = ['id', 'name', 'subtext', 'description', 'link', 'photo', 'price', 'location','starRating','lat','long']
 
 # Specify the path to the pickle file
 pickle_file_path = 'data\\processed\\processed_data.pkl'
 
 # Read the DataFrame from the pickle file
 print("Reading processed data from pickle file...")
-df = pd.read_pickle(pickle_file_path).loc[:100]
+df = pd.read_pickle(pickle_file_path)
 print("Processed data loaded successfully.")
 
 # Download nltk resources
