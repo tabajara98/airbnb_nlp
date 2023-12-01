@@ -1,85 +1,69 @@
-def semantic_search_airbnb(query):
-    # Libraries
-    import string
-    import re
-    import nltk
-    from nltk.stem import PorterStemmer, WordNetLemmatizer
-    import pickle
-    import numpy as np
-    import torch
-    import pandas as pd
-    from sentence_transformers import SentenceTransformer, util
+import os
 
-    # Download nltk
-    nltk.download('stopwords') 
-    nltk.download('wordnet')
+os.environ["TRANSFORMERS_CACHE"] = "/tmp/huggingface/"
+os.environ["HF_HOME"] = "/tmp/huggingface/"
+os.environ["SENTENCE_TRANSFORMERS_HOME"] = "/tmp/sentence_transformers/"
 
-    ##
-    ## Cleaning
-    ##
+import json
+import string
+import re
+import nltk
+from nltk.stem import PorterStemmer, WordNetLemmatizer
+import pickle
+import torch
+import pandas as pd
+from sentence_transformers import SentenceTransformer, util
+import boto3
 
-    # Function to perform all cleaning steps
-    def clean_text(text):
-        # Remove punctuation
-        text = "".join([char for char in text if char not in string.punctuation])
 
-        # Lowercase the text
-        text = text.lower()
+# Set the NLTK data path to /tmp for Lambda
+nltk.data.path.append("/tmp")
 
-        # Tokenization
-        tokens = re.split(r'\W+', text)
+# Download NLTK data
+nltk.download('stopwords', download_dir='/tmp')
+nltk.download('wordnet', download_dir='/tmp')
 
-        # Remove stopwords
-        tokens = [word for word in tokens if word not in stopwords]
 
-        # Stemming
-        tokens = [porter_stemmer.stem(word) for word in tokens]
+# Update util.http_get for caching
+util.http_get = lambda *args, **kwargs: util.http_get(*args, **kwargs, cache_folder="/tmp/")
 
-        # Lemmatization
-        tokens = [wordnet_lemmatizer.lemmatize(word) for word in tokens]
+def download_from_s3(bucket, key, download_path):
+    s3 = boto3.client('s3')
+    s3.download_file(bucket, key, download_path)
 
-        return tokens
+def clean_query(text):
+    text = "".join([char.lower() for char in text if char not in string.punctuation])
+    return text
 
-    # Set of English stopwords
-    stopwords = set(nltk.corpus.stopwords.words('english'))
-
-    # Initialize stemmer and lemmatizer
-    porter_stemmer = PorterStemmer()
-    wordnet_lemmatizer = WordNetLemmatizer()
-
-    ##
-    ## Semantic Search
-    ##
-
-    # SBERT model name
-    model_name = 'multi-qa-MiniLM-L6-cos-v1'
+def semantic_search_airbnb(query, bucket, key):
+    # Download nltk data
+    nltk.data.path.append("/tmp")
+    nltk.download('stopwords', download_dir='/tmp')
+    nltk.download('wordnet', download_dir='/tmp')
 
     # Initialize SBERT model
     print('##### INITIALIZING SBERT MODEL #####')
+    model_name = 'multi-qa-MiniLM-L6-cos-v1'
     model = SentenceTransformer(model_name)
 
-    # Cached Embeddings Path (changes according to model)
-    embedding_cache_path = f'data\\cached_models\\cached-embeddings-{model_name}_weighted_clean.pkl'
-
-    print('##### LOADING CACHED EMBEDDINGS #####')
-    with open(embedding_cache_path, "rb") as fIn:
+    # Download and load the pickle file
+    temp_download_path = '/tmp/cached-embeddings-multi-qa-MiniLM-L6-cos-v1_weighted_clean.pkl'
+    download_from_s3(bucket, key, temp_download_path)
+    with open(temp_download_path, "rb") as fIn:
         cache_data = pickle.load(fIn)
 
-    # Create a weight tensor
+    # Weighted embeddings calculation
     weights = torch.tensor([0.5, 0.5])
-    embeddings = ['embeddings_host', 'embeddings_reviews']
-    corpus_embeddings = torch.zeros_like(cache_data[embeddings[0]])  # Initialize an empty tensor
+    embeddings = ['embeddings_host','embeddings_reviews']
+    corpus_embeddings = torch.zeros_like(cache_data[embeddings[0]])
 
     for i, corpus in enumerate(embeddings):
-        # Weight the vectors with the specified weights
         weighted_embeddings = cache_data[corpus] * weights[i]
-
-        # Add the weighted embeddings to the corpus_embeddings
         corpus_embeddings += weighted_embeddings
 
-    # Encode the query
-    clean_query = pd.Series(query).apply(clean_text)
-    query_embedding = model.encode(query, show_progress_bar=True, convert_to_tensor=True)
+    # Query processing
+    cleaned_query = clean_query(query)
+    query_embedding = model.encode(cleaned_query, show_progress_bar=True, convert_to_tensor=True)
 
     top_k = 15
     print(f'##### PERFORMING SEMANTIC SEARCH FOR QUERY: "{query}" #####')
@@ -90,10 +74,11 @@ def semantic_search_airbnb(query):
     # Extract the indices of the most similar sentences
     similar_indices = search_results[0][0:top_k]
 
-    # Extract the actual sentences
+    # Extract results
     df_result = pd.DataFrame()
-    for col in ['name', 'subtext', 'description', 'link', 'photo', 'price', 'location','lat','long','starRating']:
+    for col in ['id', 'name', 'subtext', 'description', 'link', 'photo', 'price', 'location','lat','long','starRating']:
         for indice in [similar_indices[i]['corpus_id'] for i in range(len(similar_indices))]:
+            df_result.loc[indice, col] = cache_data[col][indice]
             result = cache_data[col][indice]
             if str(result) == 'nan':
                 if col == 'description':
@@ -102,12 +87,37 @@ def semantic_search_airbnb(query):
                     df_result.loc[indice, col] = 'California, United States'
             else:
                 df_result.loc[indice, col] = result 
+
     df_result['score'] = [item['score'] for item in similar_indices]
     df_result['subtext'] = df_result['subtext'].apply(lambda t: '•'.join(t.split('•')[1:]) if '★' in t else t)
     df_result['description'] = df_result['description'].str.replace('<br />','')
 
-    return df_result
 
-# Example usage
-result_df = semantic_search_airbnb('cozy cabin')
-print(result_df[['description']])
+    return df_result.to_json(orient='records')  # This returns a JSON array
+
+    #return df_result.to_json(orient='records')[1:-1] #Old return statement that did not work
+
+
+def lambda_handler(event, context):
+    # Fetch the query from the Lambda event
+    query_params = event.get('queryStringParameters', {})
+    query = query_params.get('query', '') if query_params else ''
+
+    # S3 Bucket and Key
+    bucket_name = 'capstone-airbnb'
+    key = 'cached-embeddings-multi-qa-MiniLM-L6-cos-v1_weighted_clean.pkl'
+
+    # Perform the semantic search
+    result_json = semantic_search_airbnb(query, bucket_name, key)
+
+    # Create a response
+    response = {
+        "statusCode": 200,
+        "headers": {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*"
+        },
+        "body": result_json  # result_json is already a JSON string
+    }
+
+    return response
