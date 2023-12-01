@@ -5,6 +5,7 @@ def semantic_search_airbnb(query):
     import nltk
     from nltk.stem import PorterStemmer, WordNetLemmatizer
     import pickle
+    import numpy as np
     import torch
     import pandas as pd
     from sentence_transformers import SentenceTransformer, util
@@ -93,11 +94,20 @@ def semantic_search_airbnb(query):
     df_result = pd.DataFrame()
     for col in ['name', 'subtext', 'description', 'link', 'photo', 'price', 'location','lat','long','starRating']:
         for indice in [similar_indices[i]['corpus_id'] for i in range(len(similar_indices))]:
-            df_result.loc[indice, col] = cache_data[col][indice]
+            result = cache_data[col][indice]
+            if str(result) == 'nan':
+                if col == 'description':
+                    df_result.loc[indice, col] = 'This property does not have a description.'
+                elif col == 'location':
+                    df_result.loc[indice, col] = 'California, United States'
+            else:
+                df_result.loc[indice, col] = result 
     df_result['score'] = [item['score'] for item in similar_indices]
+    df_result['subtext'] = df_result['subtext'].apply(lambda t: '•'.join(t.split('•')[1:]) if '★' in t else t)
+    df_result['description'] = df_result['description'].str.replace('<br />','')
 
     return df_result
 
 # Example usage
 result_df = semantic_search_airbnb('cozy cabin')
-print(result_df)
+print(result_df[['description']])
