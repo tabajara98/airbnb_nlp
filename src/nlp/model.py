@@ -70,8 +70,8 @@ print('SBERT model initialized successfully.')
 embedding_cache_path = f'data\\cached_models\\cached-embeddings-{model_name}_weighted_clean.pkl'
 
 # Current corpus texts
-corpus_texts_host = df['corpus_text_host'].fillna('')
-corpus_texts_reviews = df['corpus_text_reviews'].fillna('')
+corpus_texts_host = df['corpus_text_host'].fillna('').apply(clean_text)
+corpus_texts_reviews = df['corpus_text_reviews'].fillna('').apply(clean_text)
 
 # Encode ALL the current corpus texts into embeddings
 print('Encoding corpus texts...')
